@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "/usr/bin/python3 $HOME/.claude/hooks/cc-notify.py done", "timeout": 15 } ] }
+    ],
+    "Notification": [
+      { "hooks": [ { "type": "command", "command": "/usr/bin/python3 $HOME/.claude/hooks/cc-notify.py input", "timeout": 15 } ] }
+    ],
+    "SubagentStart": [
+      { "hooks": [ { "type": "command", "command": "/usr/bin/python3 $HOME/.claude/hooks/cc-notify.py agent-start", "timeout": 5 } ] }
+    ],
+    "SubagentStop": [
+      { "hooks": [ { "type": "command", "command": "/usr/bin/python3 $HOME/.claude/hooks/cc-notify.py agent-stop", "timeout": 5 } ] }
+    ]
+  }
+}
