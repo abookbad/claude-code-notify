@@ -13,7 +13,7 @@ Done  |  Awaiting input      ← body
 ```
 
 - **Done** (`done.wav`, Pokémon level-up): Claude finished the turn and nothing is still running.
-- **Agents running** (`workflow.wav`, short “I’ve got this” clip): the turn ended but subagents or a workflow are still working in the background. You get **Done** later, when they report back and Claude finishes.
+- **Agents running** (`workflow.wav`, short “I’ve got this” clip): the turn ended but subagents or a workflow are still working in the background. It plays **once per batch**: each finished agent wakes Claude briefly, and those in-between replies stay silent. You get **Done** when the last agent reports back and Claude finishes.
 - **Awaiting input** (`needs-input.wav`, “huh?” clip): Claude is actually blocked waiting on you.
 
 Background shell commands (dev servers, watchers) don't count as agents, so a long-running server won't turn every Done into "Agents running".

@@ -16,7 +16,8 @@ input only wins when no stop arrived, which is the genuine blocked case.
 
 Clicking a banner does nothing by design.
 Usage: cc-notify.py done|input|agent-start|agent-stop   (hook JSON on stdin)
-       done becomes "working" (workflow.wav) while subagents/workflows still run
+       done becomes "working" (workflow.wav) while subagents/workflows still run;
+       "working" plays once per batch, then silence until the real done
        cc-notify.py --settle <sid> <token>   (internal)"""
 import glob, json, os, subprocess, sys, time
 
@@ -76,6 +77,29 @@ def agents_running(data, sid):
     if isinstance(tasks, list):          # authoritative when Claude Code sends it
         return any(is_agent_task(t) for t in tasks if isinstance(t, dict))
     return bool(tracked_agents(sid))     # fallback: SubagentStart/Stop ledger
+
+
+def phase_file(sid):
+    return journal(sid)[:-len(".jsonl")] + ".phase"
+
+
+def announced_working(sid):
+    """True if "Agents running" already played for the current batch of agents."""
+    try:
+        return time.time() - os.path.getmtime(phase_file(sid)) < AGENT_TTL
+    except OSError:
+        return False
+
+
+def set_announced_working(sid, on):
+    try:
+        if on:
+            with open(phase_file(sid), "w") as f:
+                f.write(str(time.time()))
+        else:
+            os.remove(phase_file(sid))
+    except OSError:
+        pass
 
 
 def session_record(sid):
@@ -190,6 +214,17 @@ def settle(sid, token):
         kind = max(ended, key=lambda o: float(o.get("ts", 0))).get("kind")
     else:
         kind = "input"
+
+    # "Agents running" plays ONCE per batch. Each finished agent wakes the main
+    # turn, which ends again while the rest are still out; those stops stay
+    # silent until the batch is done and the real Done plays.
+    if kind == "working":
+        if announced_working(sid):
+            dbg("SKIP  working (already announced for this batch)")
+            return
+        set_announced_working(sid, True)
+    elif kind == "done":
+        set_announced_working(sid, False)
 
     # An agent that simply FINISHED still gets an idle nudge about a minute
     # later. That is not a question, so it must not ring. Only announce
